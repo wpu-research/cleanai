@@ -19,7 +19,8 @@ npm test           # geometri, HMI katmanı ve API testleri
 |---|---|
 | Sağdaki liste | Proje seç / aç |
 | `Ctrl+S` | Kaydet |
-| `V` | Yürü ↔ Maket görünümü (maket modunda tavan kalkar) |
+| `V` | Yürü ↔ Maket görünümü |
+| `T` veya **Tavanı aç** | Tavan düzeneğini kaldır/indir |
 | Tıkla | Fare kilidi (yürüyüş modu) |
 | `W A S D` | Yürü · `Shift` koş · `C` çömel |
 | `E` | En yakın kapıyı aç/kapat |
@@ -27,6 +28,20 @@ npm test           # geometri, HMI katmanı ve API testleri
 | **Çizimden oda oluştur** | Teknik çizim görüntüsünden odayı üret |
 | `H` veya **İndir** | HMI arka planı + katmanları indir |
 | **HMI yayınla** | Çıktıyı sunucuya yazıp PLC için sabit adres üret |
+
+## Tavan düzeneği
+
+Tavan plakası, HEPA kutuları, aydınlatma armatürleri ve dönüş menfezleri tek bir
+düzenektir; birlikte açılıp kapanır (`T`, **Tavanı aç**, mobilde **Tavan**).
+
+- **Kapalı:** yapı bütün görünür, ekipman tavanın içine gömülüdür.
+- **Açık:** düzenek yukarı kalkar ve plaka saydamlaşır — iç mekân görünürken
+  HEPA/armatür yerleşimi havada okunur kalır. Plaka opak kalsaydı yukarıdan
+  bakınca odayı kapatırdı.
+
+Işık kaynakları tavanla birlikte hareket etmez, yerinde kalır; tavan açılınca
+oda kararmaz. Varsayılan: yürüyüş modunda kapalı, maket modunda açık — her iki
+modda elle değiştirilebilir.
 
 ## Mobil
 

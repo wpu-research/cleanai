@@ -120,7 +120,7 @@ function rebuild(cfg) {
   app.cfg = cfg;
   app.current = buildPlan(cfg, mats);
   scene.add(app.current.root);
-  applyCeilingVisibility();
+  setCeiling(app.ceilingOpen ?? false, true);
 
   const b = planBounds(cfg, 0);
   sun.target.position.set(b.minX + b.w / 2, 0, b.minZ + b.h / 2);
@@ -157,24 +157,64 @@ function resetCamera() {
 }
 
 /** Maket modunda tavan plakası kalkar (üstü açık maket görünümü). */
-function applyCeilingVisibility() {
-  if (!app.current) return;
-  const show = app.mode === 'walk';
-  app.current.root.traverse((o) => {
-    if (o.isMesh && o.name.startsWith('ceiling:')) o.visible = show;
-  });
+/**
+ * Tavan düzeneği (plaka + HEPA + aydınlatma + dönüş menfezleri) tek parça olarak
+ * yukarı kalkar. Kapalıyken yapı bütün, açıkken iç mekân görünür; ekipman
+ * havada kaldığı için hangi birimin nereye geldiği yine okunur.
+ */
+function setCeiling(open, instant = false) {
+  app.ceilingOpen = open;
+  const lift = Math.max(1.8, (app.cfg?.wallHeight ?? 2.7) * 0.95);
+  app.ceilingLift = lift;
+  app.ceilingTarget = open ? lift : 0;
+  if (instant && app.current) {
+    app.current.ceilingGroup.position.y = app.ceilingTarget;
+    applyCeilingFade();
+  }
+  const label = open ? 'Tavanı kapat' : 'Tavanı aç';
+  $('ceilBtn').textContent = label;
+  $('ceilBtn').classList.toggle('on', open);
+  $('mCeilBtn').textContent = open ? 'Tavan ▼' : 'Tavan ▲';
+}
+
+/**
+ * Plaka kalktıkça saydamlaşır; yoksa havada asılı tavan iç mekânı yukarıdan
+ * kapatıyor. Ekipman (HEPA, armatür, menfez) opak kalır, yerleşim okunur.
+ */
+function applyCeilingFade() {
+  const g = app.current?.ceilingGroup;
+  if (!g) return;
+  const t = Math.min(1, g.position.y / (app.ceilingLift || 1));
+  const m = mats.ceiling;
+  m.opacity = 1 - 0.85 * t;
+  m.transparent = t > 0.01;
+  m.depthWrite = !m.transparent;
+  m.needsUpdate = true;
+}
+
+/** Tavan yüksekliğini hedefe doğru yumuşakça taşır. */
+function animateCeiling(dt) {
+  const g = app.current?.ceilingGroup;
+  if (!g) return;
+  const d = app.ceilingTarget - g.position.y;
+  if (Math.abs(d) < 0.001) {
+    if (g.position.y !== app.ceilingTarget) { g.position.y = app.ceilingTarget; applyCeilingFade(); }
+    return;
+  }
+  g.position.y += d * Math.min(1, dt * 4.5);
+  applyCeilingFade();
 }
 
 function setMode(m) {
   app.mode = m;
   orbit.enabled = (m === 'orbit');
-  applyCeilingVisibility();
+  setCeiling(m === 'orbit');
   if (m === 'orbit' && document.pointerLockElement) document.exitPointerLock();
   document.querySelectorAll('[data-mode]').forEach((el) =>
     el.classList.toggle('on', el.dataset.mode === m));
   $('hint').textContent = m === 'walk'
-    ? 'Tıkla → fare kilidi · WASD yürü · Shift koş · C çömel · E kapı aç/kapat · Esc çık'
-    : 'Sol tuş döndür · sağ tuş kaydır · tekerlek yakınlaş';
+    ? 'Tıkla → fare kilidi · WASD yürü · Shift koş · C çömel · E kapı · T tavan · Esc çık'
+    : 'Sol tuş döndür · sağ tuş kaydır · tekerlek yakınlaş · T tavan';
   if (m !== 'walk') { stickHide(); touch.moveId = touch.lookId = null; }
   syncMobileBar();
   if (app.cfg) resetCamera();
@@ -383,6 +423,7 @@ function initMobile() {
   $('mProjBtn').addEventListener('click', () => openSheet('projects'));
   $('mInfoBtn').addEventListener('click', () => $('info').classList.toggle('open'));
   $('mDoorBtn').addEventListener('click', toggleNearestDoor);
+  $('mCeilBtn').addEventListener('click', () => setCeiling(!app.ceilingOpen));
   $('mModeBtn').addEventListener('click', () => setMode(app.mode === 'walk' ? 'orbit' : 'walk'));
   // menüden bir şey seçilince çekmece kapansın
   $('top').addEventListener('click', (e) => {
@@ -404,6 +445,7 @@ addEventListener('keydown', (e) => {
   app.keys.add(e.code);
   if (e.code === 'KeyV') setMode(app.mode === 'walk' ? 'orbit' : 'walk');
   if (e.code === 'KeyE') toggleNearestDoor();
+  if (e.code === 'KeyT') setCeiling(!app.ceilingOpen);
   if (e.code === 'KeyH') exportHMI();
   if (e.code === 'KeyR') resetCamera();
 });
@@ -499,6 +541,8 @@ const clock = new THREE.Clock();
 function tick() {
   const dt = Math.min(clock.getDelta(), 0.05);
 
+  animateCeiling(dt);
+
   if (app.current) {
     for (const d of app.current.registry.doors) {
       if (Math.abs(d.open - d.target) > 0.001) {
@@ -546,8 +590,11 @@ addEventListener('resize', resize);
 
 /* ---------- bağlama ---------- */
 
+document.querySelectorAll('[data-mode]').forEach((el) =>
+  el.addEventListener('click', () => setMode(el.dataset.mode)));
 $('exportBtn').addEventListener('click', exportHMI);
 $('publishBtn').addEventListener('click', publishHMI);
+$('ceilBtn').addEventListener('click', () => setCeiling(!app.ceilingOpen));
 $('editBtn').addEventListener('click', () => toggleEditor());
 $('editClose').addEventListener('click', () => toggleEditor(false));
 $('applyBtn').addEventListener('click', applyEdits);

@@ -37,8 +37,10 @@ export function makeMaterials() {
     floor: new THREE.MeshStandardMaterial({
       color: 0xe9eef0, roughness: 0.18, metalness: 0.0, side: THREE.DoubleSide,
     }),
+    // Tavan plakası açıkken saydamlaşır (iç mekân görünsün), kapalıyken tam opak.
     ceiling: new THREE.MeshStandardMaterial({
       color: 0xf7fafb, roughness: 0.6, side: THREE.DoubleSide,
+      transparent: false, opacity: 1,
     }),
     cove: new THREE.MeshStandardMaterial({ color: 0xe6ecee, roughness: 0.3 }),
     alu: new THREE.MeshStandardMaterial({ color: 0xc3ccd2, roughness: 0.3, metalness: 0.75 }),
@@ -269,7 +271,7 @@ function shapeFromPolygon(poly) {
   return s;
 }
 
-function buildZone(zone, cfg, mats, parent) {
+function buildZone(zone, cfg, mats, parent, ceilingGroup) {
   const shape = shapeFromPolygon(zone.polygon);
 
   const floor = new THREE.Mesh(new THREE.ShapeGeometry(shape), mats.floor);
@@ -278,37 +280,47 @@ function buildZone(zone, cfg, mats, parent) {
   floor.name = `floor:${zone.id}`;
   parent.add(floor);
 
+  // Tavan plakası ekipmanla birlikte tek düzenekte: hep beraber açılıp kapanır.
   const ceil = new THREE.Mesh(new THREE.ShapeGeometry(shape), mats.ceiling);
   ceil.rotation.x = Math.PI / 2;
   ceil.position.y = cfg.wallHeight;
   ceil.name = `ceiling:${zone.id}`;
-  parent.add(ceil);
+  ceilingGroup.add(ceil);
 }
 
 /* ---------- tavan ekipmanı ---------- */
 
-function buildCeiling(cfg, mats, parent, registry) {
+function buildCeiling(cfg, mats, root, ceilingGroup, registry) {
   const H = cfg.wallHeight;
   const c = cfg.ceiling || {};
 
+  // Ekipman tavan plakasının biraz altına gömülür: üst yüzleri plakayla tam
+  // aynı düzlemde olursa dışarıdan tavanın içinden sızmış gibi görünüyor.
+  const R = 0.02;
+
+  // HEPA kutuları: kasa + filtre yüzeyi
   for (const h of c.hepa || []) {
-    box(h.w, 0.06, h.l, mats.alu, h.x, H - 0.03, h.z, parent);
-    box(h.w - 0.08, 0.03, h.l - 0.08, mats.hepa, h.x, H - 0.065, h.z, parent);
+    const body = box(h.w, 0.06, h.l, mats.alu, h.x, H - R - 0.03, h.z, ceilingGroup);
+    body.name = `hepa:${h.id}`;
+    box(h.w - 0.08, 0.03, h.l - 0.08, mats.hepa, h.x, H - R - 0.065, h.z, ceilingGroup);
     registry.hepa.push(h);
   }
 
+  // Aydınlatma: armatür tavanla birlikte hareket eder, ışık kaynağı yerinde kalır
+  // (tavan açılınca oda kararmasın).
   for (const l of c.lights || []) {
-    box(l.w, 0.05, l.l, mats.alu, l.x, H - 0.025, l.z, parent);
-    const lens = box(l.w - 0.06, 0.02, l.l - 0.05, mats.lightLens, l.x, H - 0.055, l.z, parent);
+    box(l.w, 0.05, l.l, mats.alu, l.x, H - R - 0.025, l.z, ceilingGroup);
+    const lens = box(l.w - 0.06, 0.02, l.l - 0.05, mats.lightLens, l.x, H - R - 0.055, l.z, ceilingGroup);
     lens.name = `lens:${l.id}`;
     const pl = new THREE.PointLight(0xfff4e0, 6, 9, 2);
     pl.position.set(l.x, H - 0.2, l.z);
-    parent.add(pl);
+    root.add(pl);
     registry.lights.push({ id: l.id, lens, light: pl, def: l });
   }
 
   for (const r of c.returns || []) {
-    box(r.w, 0.04, r.l, mats.grille, r.x, H - 0.02, r.z, parent);
+    const g = box(r.w, 0.04, r.l, mats.grille, r.x, H - R - 0.02, r.z, ceilingGroup);
+    g.name = `return:${r.id}`;
     registry.returns.push(r);
   }
 }
@@ -335,20 +347,24 @@ function buildSensors(cfg, mats, parent, registry) {
 export function buildPlan(cfg, mats) {
   const root = new THREE.Group();
   root.name = `plan:${cfg.id}`;
+  const ceilingGroup = new THREE.Group();
+  ceilingGroup.name = 'ceilingGroup';
+  root.add(ceilingGroup);
+
   const registry = {
     doors: [], passboxes: [], hepa: [], lights: [], returns: [], sensors: [],
-    walls: [], cfg,
+    walls: [], cfg, ceilingGroup,
   };
 
-  for (const z of cfg.zones) buildZone(z, cfg, mats, root);
+  for (const z of cfg.zones) buildZone(z, cfg, mats, root, ceilingGroup);
   for (const w of cfg.walls) {
     buildWall(w, cfg, mats, root, registry);
     registry.walls.push(w);
   }
-  buildCeiling(cfg, mats, root, registry);
+  buildCeiling(cfg, mats, root, ceilingGroup, registry);
   buildSensors(cfg, mats, root, registry);
 
-  return { root, registry };
+  return { root, registry, ceilingGroup };
 }
 
 /* ---------- çarpışma ---------- */
