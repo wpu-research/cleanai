@@ -93,11 +93,44 @@ function localGroup(a, b, parent) {
   return { g, len, ang, dir: dir.clone().normalize() };
 }
 
+/* ---------- yön tayini ---------- */
+
+function pointInPoly(poly, x, z) {
+  let inside = false;
+  for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+    const [xi, zi] = poly[i], [xj, zj] = poly[j];
+    if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+  }
+  return inside;
+}
+
+/**
+ * Duvarın hangi yüzünün oda içine baktığını bulur.
+ * Dönen değer duvar grubunun yerel +Z ekseni için işarettir: +1 ya da -1.
+ * Yerel +Z, dünyada (-sin açı, cos açı) yönüne denk gelir.
+ */
+export function inwardSign(cfg, wall) {
+  const zone = cfg.zones.find((z) => z.id === wall.zone) || cfg.zones[0];
+  if (!zone) return 1;
+  const ax = wall.a[0], az = wall.a[1], bx = wall.b[0], bz = wall.b[1];
+  const len = Math.hypot(bx - ax, bz - az) || 1;
+  const ang = Math.atan2(bz - az, bx - ax);
+  const nx = -Math.sin(ang), nz = Math.cos(ang);   // yerel +Z'nin dünya karşılığı
+  const mx = (ax + bx) / 2, mz = (az + bz) / 2;
+  const probe = Math.min(0.45, len / 3);
+  if (pointInPoly(zone.polygon, mx + nx * probe, mz + nz * probe)) return 1;
+  if (pointInPoly(zone.polygon, mx - nx * probe, mz - nz * probe)) return -1;
+  return 1; // duvar odaya komşu değilse varsayılan
+}
+
 /* ---------- duvar ---------- */
 
 function buildWall(wall, cfg, mats, parent, registry) {
   const H = cfg.wallHeight, T = cfg.wallThickness;
   const { g, len } = localGroup(wall.a, wall.b, parent);
+  const inward = inwardSign(cfg, wall);   // oda hangi yüzde?
+  g.userData.zone = wall.zone;
+  g.userData.inward = inward;
 
   const ops = (wall.openings || []).slice().sort((p, q) => p.center - q.center);
   const spans = []; // dolu (tam yükseklik) parçalar
@@ -127,7 +160,7 @@ function buildWall(wall, cfg, mats, parent, registry) {
 
   for (const o of ops) {
     if (o.type === 'door') buildDoor(o, cfg, mats, g, registry, wall);
-    else if (o.type === 'passbox') buildPassBox(o, cfg, mats, g, registry, wall);
+    else if (o.type === 'passbox') buildPassBox(o, cfg, mats, g, registry, inward);
     else if (o.type === 'window') buildWindow(o, cfg, mats, g);
     // açıklık üstü dolgu
     const top = o.sill + o.h;
@@ -180,32 +213,43 @@ function buildDoor(o, cfg, mats, g, registry, wall) {
   registry.doors.push({ id: o.id, hinge, open: 0, target: 0, wall, opening: o });
 }
 
-function buildPassBox(o, cfg, mats, g, registry) {
+/**
+ * Malzeme geçiş kutusu. Kabin her zaman ODA İÇİNE taşar; turkuaz camlı kullanım
+ * yüzü, kolları ve kilidi odaya bakar. Dış taraf duvarla hizalı düz kapaktır.
+ * @param inward duvar grubunun yerel +Z ekseninde oda yönü (+1 / -1)
+ */
+function buildPassBox(o, cfg, mats, g, registry, inward = 1) {
   const T = cfg.wallThickness;
   const depth = 0.55;
   const y = o.sill + o.h / 2;
-  // gövde (duvara gömülü kutu)
-  box(o.w + 0.1, o.h + 0.1, depth, mats.alu, o.center, y, 0, g);
-  box(o.w - 0.06, o.h - 0.06, depth + 0.02, mats.wallPlain, o.center, y, 0, g);
-  // iki yüzde turkuaz camlı kapak + çerçeve
-  for (const s of [1, -1]) {
-    const zz = s * (depth / 2 + 0.01);
-    box(o.w - 0.06, o.h - 0.06, 0.022, mats.alu, o.center, y, zz, g);
-    box(o.w - 0.16, o.h - 0.16, 0.03, mats.glassTeal, o.center, y, zz + s * 0.004, g);
-    // eğik kol (2D simgedeki iki çizgi)
-    for (const sy of [1, -1]) {
-      const arm = new THREE.Mesh(new THREE.BoxGeometry(0.035, o.h * 0.42, 0.03), mats.steel);
-      arm.position.set(o.center + s * (o.w / 2 - 0.02), y + sy * o.h * 0.22, zz + s * 0.05);
-      arm.rotation.z = sy * 0.3;
-      g.add(arm);
-    }
-    // kilit düğmesi
-    const k = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.05, 14), mats.steel);
-    k.rotation.x = Math.PI / 2;
-    k.position.set(o.center - o.w / 2 + 0.06, y, zz + s * 0.03);
-    g.add(k);
+  const s = inward;
+
+  // gövde: arka yüzü duvarın dış yüzüyle hizalı, önü odaya doğru çıkar
+  const bodyC = s * (depth - T) / 2;
+  box(o.w + 0.1, o.h + 0.1, depth, mats.alu, o.center, y, bodyC, g);
+  box(o.w - 0.06, o.h - 0.06, depth + 0.02, mats.wallPlain, o.center, y, bodyC, g);
+
+  // --- oda tarafı: kullanım yüzü ---
+  const fz = s * (depth - T / 2);
+  box(o.w - 0.06, o.h - 0.06, 0.022, mats.alu, o.center, y, fz, g);
+  box(o.w - 0.16, o.h - 0.16, 0.03, mats.glassTeal, o.center, y, fz + s * 0.004, g);
+  for (const sy of [1, -1]) {
+    const arm = new THREE.Mesh(new THREE.BoxGeometry(0.035, o.h * 0.42, 0.03), mats.steel);
+    arm.position.set(o.center + s * (o.w / 2 - 0.02), y + sy * o.h * 0.22, fz + s * 0.05);
+    arm.rotation.z = sy * 0.3;
+    g.add(arm);
   }
-  registry.passboxes.push({ id: o.id, opening: o });
+  const k = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.05, 14), mats.steel);
+  k.rotation.x = Math.PI / 2;
+  k.position.set(o.center - o.w / 2 + 0.06, y, fz + s * 0.03);
+  g.add(k);
+
+  // --- dış taraf: duvarla hizalı düz kapak ---
+  const bz = -s * (T / 2 + 0.01);
+  box(o.w - 0.06, o.h - 0.06, 0.022, mats.alu, o.center, y, bz, g);
+  box(o.w - 0.16, o.h - 0.16, 0.03, mats.glassTeal, o.center, y, bz - s * 0.004, g);
+
+  registry.passboxes.push({ id: o.id, opening: o, inward: s, zone: g.userData.zone });
 }
 
 function buildWindow(o, cfg, mats, g) {

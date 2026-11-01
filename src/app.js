@@ -44,6 +44,10 @@ orbit.enableDamping = true;
 orbit.enabled = false;
 
 const mats = makeMaterials();
+
+// Hata ayıklama/otomatik test tutamağı: sahneyi dışarıdan ölçebilmek için.
+// Salt okunur referanslar; uygulamanın davranışını etkilemez.
+window.__cleanai = { app, scene, mats, get cfg() { return app.cfg; } };
 const $ = (id) => document.getElementById(id);
 
 /* ---------- API (sunucu yoksa dosyadan okumaya düşer) ---------- */

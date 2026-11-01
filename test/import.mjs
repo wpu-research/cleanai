@@ -2,6 +2,31 @@
 import { decodePNG } from './png.mjs';
 import { detectPlan, toPlan, binarize, simplifyPolygon } from '../src/import.js';
 import { validatePlan } from '../src/validate.js';
+import { inwardSign } from '../src/build.js';
+
+/** Pass-box kabini duvarın oda tarafına mı taşıyor? */
+function passboxesFaceInside(plan) {
+  const inPoly = (poly, x, z) => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, zi] = poly[i], [xj, zj] = poly[j];
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  const out = [];
+  for (const w of plan.walls) {
+    for (const o of (w.openings || []).filter((q) => q.type === 'passbox')) {
+      const sgn = inwardSign(plan, w);
+      const ang = Math.atan2(w.b[1] - w.a[1], w.b[0] - w.a[0]);
+      const fx = w.a[0] + Math.cos(ang) * o.center - Math.sin(ang) * sgn * 0.3;
+      const fz = w.a[1] + Math.sin(ang) * o.center + Math.cos(ang) * sgn * 0.3;
+      const zone = plan.zones.find((z) => z.id === w.zone);
+      out.push({ id: o.id, zone: zone?.name, inside: zone ? inPoly(zone.polygon, fx, fz) : false });
+    }
+  }
+  return out;
+}
 
 let fail = 0;
 const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fail++; };
@@ -66,6 +91,11 @@ console.log('\n== Plan A çizimi (kare oda + koridor)');
   ok(plan.sensors.length === plan.zones.length, 'her bölgeye bir ΔP sensörü');
   ok(plan.walls.every((w) => w.zone), 'her duvar bir bölgeye bağlandı');
 
+  const facing = passboxesFaceInside(plan);
+  ok(facing.length === 2, `2 pass-box yön denetimine girdi (${facing.length})`);
+  ok(facing.every((f) => f.inside),
+    'pass-box kabinleri oda içine bakıyor: ' + facing.map((f) => `${f.id}→${f.zone}`).join(', '));
+
   // farklı ölçek verildiğinde her şey orantılı büyümeli
   const big2 = toPlan(det, { widthMeters: 14.0 });
   ok(near(span(big2), span(plan) * 2, 0.1),
@@ -86,6 +116,9 @@ console.log('\n== Plan B çizimi (L oda + soyunma)');
   const plan = toPlan(det, { widthMeters: 12.0, name: 'Plan B testi' });
   ok(validatePlan(plan).length === 0, 'üretilen plan doğrulamadan geçti');
   ok(plan.walls.flatMap((w) => w.openings).length >= 1, 'en az bir açıklık çıkarıldı');
+  const facingB = passboxesFaceInside(plan);
+  ok(facingB.every((f) => f.inside),
+    `pass-box kabinleri oda içine bakıyor (${facingB.length} adet)`);
 }
 
 /* --- dayanıklılık: bozuk/zor girdilerde çökmemeli --- */

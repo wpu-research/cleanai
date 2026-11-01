@@ -116,7 +116,19 @@ ve kapıdan geçilebildiğini doğrular.
 | 2D simge | Model |
 |---|---|
 | Çeyrek daire yay | Standart temiz oda kapısı — çift gözetleme camı, yuvarlak gösterge + kare kumanda paneli |
-| Kutu + iki eğik çizgi | Pass-box (malzeme geçiş kutusu) — turkuaz camlı, çift taraflı kapak |
+| Kutu + iki eğik çizgi | Pass-box (malzeme geçiş kutusu) — turkuaz camlı |
+
+### Pass-box yönü
+
+Pass-box kabini **her zaman oda içine** taşar: turkuaz camlı kullanım yüzü, kolları
+ve kilidi odaya bakar; dış taraf duvarla hizalı düz kapaktır. Yön, duvarın bağlı
+olduğu bölgenin (`walls[].zone`) poligonuna göre hesaplanır — duvarın iki yanına
+birer nokta atılıp hangisinin oda içinde kaldığına bakılır (`inwardSign`).
+
+Çizimden içe aktarmada duvarın bölgesi de aynı yöntemle atanır: duvarın orta
+noktası tam bölge sınırında durduğu için nokta testi güvenilmezdi. Testler
+kabinin ön yüzünün bölge poligonu içinde, arka yüzünün dışında kaldığını her iki
+planda da doğrular.
 
 ## PLC / HMI çıktısı
 

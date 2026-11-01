@@ -1,6 +1,6 @@
 import fs from 'fs';
 import { buildHMISVG, buildTagMap, planBounds } from '../src/hmi.js';
-import { blocked } from '../src/build.js';
+import { blocked, inwardSign } from '../src/build.js';
 
 let fail = 0;
 const ok = (c, m) => { console.log((c ? '  ok   ' : '  FAIL ') + m); if (!c) fail++; };
@@ -36,6 +36,38 @@ for (const id of ['plan-a', 'plan-b']) {
   ok(blocked(reg, cx, cz, 0.32), `${o.id} kapalıyken geçilemiyor`);
   reg.doors.find(q => q.id === o.id).open = 1;
   ok(!blocked(reg, cx, cz, 0.32), `${o.id} açıkken geçilebiliyor`);
+
+  // 3b. pass-box'ların kullanım yüzü oda içine bakıyor mu?
+  const inPoly = (poly, x, z) => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, zi] = poly[i], [xj, zj] = poly[j];
+      if ((zi > z) !== (zj > z) && x < ((xj - xi) * (z - zi)) / (zj - zi) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  let pbCount = 0;
+  for (const wl of cfg.walls) {
+    const pbs = (wl.openings || []).filter((o) => o.type === 'passbox');
+    if (!pbs.length) continue;
+    const sgn = inwardSign(cfg, wl);
+    const ang = Math.atan2(wl.b[1] - wl.a[1], wl.b[0] - wl.a[0]);
+    const ux = Math.cos(ang), uz = Math.sin(ang);
+    const nx = -Math.sin(ang) * sgn, nz = Math.cos(ang) * sgn;
+    const zone = cfg.zones.find((z) => z.id === wl.zone);
+    for (const o of pbs) {
+      pbCount++;
+      // kabinin ön yüzü: açıklık merkezinden oda yönünde yarım kabin boyu
+      const fx = wl.a[0] + ux * o.center + nx * 0.3;
+      const fz = wl.a[1] + uz * o.center + nz * 0.3;
+      ok(inPoly(zone.polygon, fx, fz), `${o.id} kabini ${zone.name} içine taşıyor`);
+      // arka yüz oda dışında kalmalı
+      const bx = wl.a[0] + ux * o.center - nx * 0.3;
+      const bz = wl.a[1] + uz * o.center - nz * 0.3;
+      ok(!inPoly(zone.polygon, bx, bz), `${o.id} dış yüzü odanın dışında`);
+    }
+  }
+  ok(pbCount > 0, `pass-box yönü denetlendi (${pbCount} adet)`);
 
   // 4. HMI SVG üretimi + hizalama
   const b = planBounds(cfg);

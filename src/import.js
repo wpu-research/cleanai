@@ -267,46 +267,60 @@ function tracePolygon(cells, xs, ys) {
 }
 
 /** Duvar kalınlığından küçük çıkıntı/girintileri poligondan atar. */
-export function simplifyPolygon(poly, minFeature) {
+export function simplifyPolygon(poly, minFeature, symbols = [], inflate = 0) {
+  /** Girintinin içinde bir simge (pass-box kutusu gibi) duruyor mu? */
+  const bb = (() => {
+    const xs = poly.map((q) => q[0]), ys = poly.map((q) => q[1]);
+    return (Math.max(...xs) - Math.min(...xs)) * (Math.max(...ys) - Math.min(...ys));
+  })();
+  const hasSymbol = (b, c, d) => {
+    if (!symbols.length) return false;
+    // girinti odanın yanında küçük kalmalı: L biçimli gerçek oda düzlenmemeli
+    const area = Math.hypot(c[0] - b[0], c[1] - b[1]) * Math.hypot(d[0] - c[0], d[1] - c[1]);
+    if (area > 0.03 * bb) return false;
+    const x0 = Math.min(b[0], c[0], d[0]) - inflate, x1 = Math.max(b[0], c[0], d[0]) + inflate;
+    const y0 = Math.min(b[1], c[1], d[1]) - inflate, y1 = Math.max(b[1], c[1], d[1]) + inflate;
+    return symbols.some((s) => {
+      const cx = (s.minX + s.maxX) / 2, cy = (s.minY + s.maxY) / 2;
+      return cx >= x0 && cx <= x1 && cy >= y0 && cy <= y1;
+    });
+  };
   let p = poly.slice();
-  for (let pass = 0; pass < 4; pass++) {
+  for (let pass = 0; pass < 8; pass++) {
     let changed = false;
     for (let i = 0; i < p.length && p.length > 4; i++) {
-      const a = p[i], b = p[(i + 1) % p.length];
-      const c = p[(i + 2) % p.length], d = p[(i + 3) % p.length];
-      const w = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const ib = (i + 1) % p.length, ic = (i + 2) % p.length, id = (i + 3) % p.length;
+      const a = p[i], b = p[ib], c = p[ic], d = p[id];
       const dep = Math.hypot(c[0] - b[0], c[1] - b[1]);
-      const w2 = Math.hypot(d[0] - c[0], d[1] - c[1]);
-      // a→b ve c→d aynı doğrultuda, aradaki b→c kısa bir sapma ise düzle
-      const sameAxis = (a[0] === b[0]) === (c[0] === d[0]);
-      // çıkıntı/girinti: a→b ve c→d zıt yönlü kısa kenarlar, b→c dar (pass-box kutusu gibi)
-      const bump = (a[0] === b[0]) !== (b[0] === c[0]) && (c[0] === d[0]) === (a[0] === b[0])
-        && w < minFeature && w2 < minFeature && dep < minFeature * 2.5
-        && ((a[0] === b[0]) ? Math.sign(b[1] - a[1]) !== Math.sign(d[1] - c[1])
-                           : Math.sign(b[0] - a[0]) !== Math.sign(d[0] - c[0]));
-      if (bump) {
-        const keep = [];
-        for (let k = 0; k < p.length; k++) {
-          if (k === (i + 1) % p.length || k === (i + 2) % p.length) continue;
-          keep.push(p[k]);
-        }
-        p = keep; changed = true; break;
+      if (dep === 0) continue;
+      // sapma, komşu iki kenardan da kısa olmalı — yoksa köşenin kendisini düzleriz
+      const run1 = Math.hypot(b[0] - a[0], b[1] - a[1]);
+      const run2 = Math.hypot(d[0] - c[0], d[1] - c[1]);
+      if (dep > Math.min(run1, run2)) continue;
+      // Ya duvar kalınlığı ölçeğinde bir pürüz, ya da içine pass-box simgesi
+      // düşen bir girinti (çizimde kabin kutusu olarak çizilmiş) ise düzlenir.
+      if (dep >= minFeature && !hasSymbol(b, c, d)) continue;
+
+      // a→b ile c→d aynı doğrultuda, aralarında kısa bir sapma (b→c) var.
+      // İki noktayı silmek çapraz kenar üretir; onun yerine sapmayı hizalıyoruz:
+      // küçük çıkıntı/girinti komşu kenarın hizasına çekilir, sonra eşdoğrusal
+      // noktalar temizlenince kendiliğinden yok olur.
+      if (a[1] === b[1] && c[1] === d[1] && b[1] !== c[1]) {
+        p = p.map((q, k) => (k === ic || k === id ? [q[0], b[1]] : q));
+        changed = true; break;
       }
-      if (sameAxis && dep < minFeature && Math.min(w, w2) < minFeature * 2.5) {
-        const keep = [];
-        for (let k = 0; k < p.length; k++) {
-          if (k === (i + 1) % p.length || k === (i + 2) % p.length) continue;
-          keep.push(p[k]);
-        }
-        p = keep; changed = true; break;
+      if (a[0] === b[0] && c[0] === d[0] && b[0] !== c[0]) {
+        p = p.map((q, k) => (k === ic || k === id ? [b[0], q[1]] : q));
+        changed = true; break;
       }
     }
     if (!changed) break;
   }
-  // kalan eşdoğrusal noktaları temizle
+  // kalan eşdoğrusal ve üst üste binen noktaları temizle
   const out = [];
   for (let i = 0; i < p.length; i++) {
     const a = p[(i - 1 + p.length) % p.length], b = p[i], c = p[(i + 1) % p.length];
+    if (a[0] === b[0] && a[1] === b[1]) continue;
     const col = (a[0] === b[0] && b[0] === c[0]) || (a[1] === b[1] && b[1] === c[1]);
     if (!col) out.push(b);
   }
@@ -498,10 +512,14 @@ export function detectPlan(imageData, opts = {}) {
   const rawWalls = detectWalls(bin, o);
   const roomsRaw = detectRooms(rawWalls, bin, o);
   const thickest = Math.max(...rawWalls.horizontal.concat(rawWalls.vertical).map((l) => l.t), 6);
-  const rooms = roomsRaw.map((r) => ({ ...r, polygon: simplifyPolygon(r.polygon, 2.5 * thickest) }));
 
   // simgeleri ayıklarken ham duvarlarla sil: çizim süsleri de temizlenmiş olur
   const clusters = detectSymbols(bin, rawWalls, o);
+
+  // oda sınırındaki pürüzleri ve pass-box kabini girintilerini düzle
+  const rooms = roomsRaw.map((r) => ({
+    ...r, polygon: simplifyPolygon(r.polygon, 2.5 * thickest, clusters, 2 * thickest),
+  }));
   const walls = keepRoomWalls(dedupeWalls(rawWalls, tol), rooms, tol);
   const segs = wallSegments(walls);
 
@@ -590,8 +608,20 @@ export function toPlan(det, cfg = {}) {
     polygon: r.polygon.map(([x, y]) => [X(x), Z(y)]),
   }));
 
-  const zoneOf = (x, y) => {
-    for (const z of zones) if (pointInPoly(z.polygon, [X(x), Z(y)])) return z.id;
+  /**
+   * Duvarı bir bölgeye bağlar. Duvarın orta noktası tam bölge sınırında durduğu
+   * için nokta testi güvenilmez; bunun yerine iki yanına bakılır. Pass-box'ın
+   * hangi yöne bakacağı buna dayandığından bu atama doğru olmalı.
+   */
+  const zoneOfWall = (a, b) => {
+    const ang = Math.atan2(b[1] - a[1], b[0] - a[0]);
+    const nx = -Math.sin(ang), nz = Math.cos(ang);
+    const mx = (a[0] + b[0]) / 2, mz = (a[1] + b[1]) / 2;
+    const probe = 0.35;
+    for (const z of zones) {
+      if (pointInPoly(z.polygon, [mx + nx * probe, mz + nz * probe]) ||
+          pointInPoly(z.polygon, [mx - nx * probe, mz - nz * probe])) return z.id;
+    }
     return zones[0]?.id || 'Z1';
   };
 
@@ -629,7 +659,7 @@ export function toPlan(det, cfg = {}) {
       fit.push(op);
     }
     ops.length = 0; ops.push(...fit);
-    return { a, b, zone: zoneOf(mid[0], mid[1]), openings: ops };
+    return { a, b, zone: zoneOfWall(a, b), openings: ops };
   }).filter((w) => Math.hypot(w.b[0] - w.a[0], w.b[1] - w.a[1]) > 0.3);
 
   // tavan ekipmanı: her bölgeye makul ızgara
