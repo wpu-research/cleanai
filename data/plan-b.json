@@ -1,0 +1,75 @@
+{
+  "id": "plan-b",
+  "name": "Plan B — L odası + soyunma/airlock",
+  "units": "m",
+  "note": "Koordinat: x sağa, z aşağı (teknik çizimdeki gibi). y = yükseklik. Ölçüler teknik çizim oranlarından türetildi, gerçek ölçü gelince burayı güncelle.",
+  "wallHeight": 2.7,
+  "wallThickness": 0.08,
+  "plenumHeight": 0.45,
+
+  "zones": [
+    {
+      "id": "Z1",
+      "name": "Üretim Odası",
+      "class": "ISO 7",
+      "pressurePa": 15,
+      "polygon": [[0, 0.6], [3.8, 0.6], [3.8, 0], [8.0, 0], [8.0, 6.6], [0, 6.6]]
+    },
+    {
+      "id": "Z2",
+      "name": "Soyunma / Airlock",
+      "class": "ISO 8",
+      "pressurePa": 8,
+      "polygon": [[8.0, -0.45], [12.0, -0.45], [12.0, 2.4], [8.0, 2.4]]
+    }
+  ],
+
+  "walls": [
+    { "a": [0, 0.6],    "b": [3.8, 0.6],  "zone": "Z1", "openings": [] },
+    { "a": [3.8, 0.6],  "b": [3.8, 0],    "zone": "Z1", "openings": [] },
+    { "a": [3.8, 0],    "b": [8.0, 0],    "zone": "Z1", "openings": [] },
+    { "a": [8.0, 0],    "b": [8.0, 6.6],  "zone": "Z1", "openings": [
+        { "id": "D1", "type": "door",    "type_tr": "Temiz oda kapısı", "center": 1.4, "w": 1.0, "h": 2.1, "sill": 0.0, "vision": true },
+        { "id": "PB1", "type": "passbox", "type_tr": "Malzeme geçiş kutusu", "center": 4.2, "w": 1.0, "h": 0.7, "sill": 0.9 }
+      ] },
+    { "a": [8.0, 6.6],  "b": [0, 6.6],    "zone": "Z1", "openings": [
+        { "id": "PB2", "type": "passbox", "type_tr": "Malzeme geçiş kutusu", "center": 2.1, "w": 1.0, "h": 0.7, "sill": 0.9 }
+      ] },
+    { "a": [0, 6.6],    "b": [0, 0.6],    "zone": "Z1", "openings": [] },
+
+    { "a": [8.0, -0.45],  "b": [12.0, -0.45], "zone": "Z2", "openings": [] },
+    { "a": [12.0, -0.45], "b": [12.0, 2.4],   "zone": "Z2", "openings": [] },
+    { "a": [12.0, 2.4],   "b": [8.0, 2.4],    "zone": "Z2", "openings": [
+        { "id": "D2", "type": "door", "type_tr": "Dış giriş kapısı", "center": 2.0, "w": 1.0, "h": 2.1, "sill": 0.0, "vision": true }
+      ] }
+  ],
+
+  "ceiling": {
+    "hepa": [
+      { "id": "HEPA-1", "x": 2.0, "z": 2.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-2", "x": 6.0, "z": 2.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-3", "x": 2.0, "z": 5.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-4", "x": 6.0, "z": 5.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-5", "x": 10.0, "z": 1.0, "w": 1.2, "l": 0.6 }
+    ],
+    "lights": [
+      { "id": "L1", "x": 4.0, "z": 1.3, "w": 1.2, "l": 0.3 },
+      { "id": "L2", "x": 4.0, "z": 3.6, "w": 1.2, "l": 0.3 },
+      { "id": "L3", "x": 4.0, "z": 5.9, "w": 1.2, "l": 0.3 },
+      { "id": "L4", "x": 10.0, "z": 0.5, "w": 1.2, "l": 0.3 }
+    ],
+    "returns": [
+      { "id": "RA-1", "x": 0.4, "z": 3.3, "w": 0.4, "l": 1.2 },
+      { "id": "RA-2", "x": 7.6, "z": 3.3, "w": 0.4, "l": 1.2 }
+    ]
+  },
+
+  "sensors": [
+    { "id": "DP-1", "type": "dp",   "label": "ΔP Üretim/Koridor", "x": 7.9, "z": 2.6, "y": 1.5, "wall": "x+" },
+    { "id": "DP-2", "type": "dp",   "label": "ΔP Soyunma/Dış",    "x": 11.9, "z": 1.2, "y": 1.5, "wall": "x+" },
+    { "id": "TH-1", "type": "temp", "label": "Sıcaklık/Nem",      "x": 0.1, "z": 2.0, "y": 1.5, "wall": "x-" },
+    { "id": "PC-1", "type": "particle", "label": "Partikül Sayıcı", "x": 0.1, "z": 4.5, "y": 1.5, "wall": "x-" }
+  ],
+
+  "spawn": { "x": 10.6, "z": 1.4, "heading": 180 }
+}

@@ -1,0 +1,156 @@
+{
+  "plan": "plan-a",
+  "pxPerM": 160,
+  "width": 1312,
+  "height": 1312,
+  "bounds": {
+    "minX": -0.6,
+    "minZ": -0.6,
+    "maxX": 7.6,
+    "maxZ": 7.6,
+    "w": 8.2,
+    "h": 8.2
+  },
+  "tags": [
+    {
+      "svgId": "zone-Z1",
+      "kind": "zone",
+      "label": "Temiz Oda",
+      "signal": "Z1_PRESSURE_PA",
+      "hint": "Sınıf dışı ise class=\"zone alarm\""
+    },
+    {
+      "svgId": "zone-Z2",
+      "kind": "zone",
+      "label": "Koridor",
+      "signal": "Z2_PRESSURE_PA",
+      "hint": "Sınıf dışı ise class=\"zone alarm\""
+    },
+    {
+      "svgId": "door-D1",
+      "kind": "door",
+      "label": "Temiz oda kapısı",
+      "signal": "D1_OPEN",
+      "hint": "Açıkken class=\"door\", kapalıyken class=\"door closed\", interlock ihlalinde \"door alarm\""
+    },
+    {
+      "svgId": "passbox-PB1",
+      "kind": "passbox",
+      "label": "Malzeme geçiş kutusu",
+      "signal": "PB1_LOCKED",
+      "hint": "Kilitliyse opacity düşür"
+    },
+    {
+      "svgId": "passbox-PB2",
+      "kind": "passbox",
+      "label": "Malzeme geçiş kutusu",
+      "signal": "PB2_LOCKED",
+      "hint": "Kilitliyse opacity düşür"
+    },
+    {
+      "svgId": "door-D2",
+      "kind": "door",
+      "label": "Dış giriş kapısı",
+      "signal": "D2_OPEN",
+      "hint": "Açıkken class=\"door\", kapalıyken class=\"door closed\", interlock ihlalinde \"door alarm\""
+    },
+    {
+      "svgId": "hepa-HEPA-1",
+      "kind": "hepa",
+      "label": "HEPA-1",
+      "signal": "HEPA-1_DP_PA",
+      "hint": "Filtre fark basıncı; eşik aşımında stroke kırmızı"
+    },
+    {
+      "svgId": "hepa-HEPA-2",
+      "kind": "hepa",
+      "label": "HEPA-2",
+      "signal": "HEPA-2_DP_PA",
+      "hint": "Filtre fark basıncı; eşik aşımında stroke kırmızı"
+    },
+    {
+      "svgId": "hepa-HEPA-3",
+      "kind": "hepa",
+      "label": "HEPA-3",
+      "signal": "HEPA-3_DP_PA",
+      "hint": "Filtre fark basıncı; eşik aşımında stroke kırmızı"
+    },
+    {
+      "svgId": "hepa-HEPA-4",
+      "kind": "hepa",
+      "label": "HEPA-4",
+      "signal": "HEPA-4_DP_PA",
+      "hint": "Filtre fark basıncı; eşik aşımında stroke kırmızı"
+    },
+    {
+      "svgId": "hepa-HEPA-5",
+      "kind": "hepa",
+      "label": "HEPA-5",
+      "signal": "HEPA-5_DP_PA",
+      "hint": "Filtre fark basıncı; eşik aşımında stroke kırmızı"
+    },
+    {
+      "svgId": "light-L1",
+      "kind": "light",
+      "label": "L1",
+      "signal": "L1_ON",
+      "hint": "Kapalıyken class=\"light off\""
+    },
+    {
+      "svgId": "light-L2",
+      "kind": "light",
+      "label": "L2",
+      "signal": "L2_ON",
+      "hint": "Kapalıyken class=\"light off\""
+    },
+    {
+      "svgId": "light-L3",
+      "kind": "light",
+      "label": "L3",
+      "signal": "L3_ON",
+      "hint": "Kapalıyken class=\"light off\""
+    },
+    {
+      "svgId": "light-L4",
+      "kind": "light",
+      "label": "L4",
+      "signal": "L4_ON",
+      "hint": "Kapalıyken class=\"light off\""
+    },
+    {
+      "svgId": "light-L5",
+      "kind": "light",
+      "label": "L5",
+      "signal": "L5_ON",
+      "hint": "Kapalıyken class=\"light off\""
+    },
+    {
+      "svgId": "value-DP-1",
+      "kind": "dp",
+      "label": "ΔP Oda/Koridor",
+      "signal": "DP-1_VALUE",
+      "hint": "textContent olarak yaz"
+    },
+    {
+      "svgId": "value-DP-2",
+      "kind": "dp",
+      "label": "ΔP Koridor/Dış",
+      "signal": "DP-2_VALUE",
+      "hint": "textContent olarak yaz"
+    },
+    {
+      "svgId": "value-TH-1",
+      "kind": "temp",
+      "label": "Sıcaklık/Nem",
+      "signal": "TH-1_VALUE",
+      "hint": "textContent olarak yaz"
+    },
+    {
+      "svgId": "value-PC-1",
+      "kind": "particle",
+      "label": "Partikül Sayıcı",
+      "signal": "PC-1_VALUE",
+      "hint": "textContent olarak yaz"
+    }
+  ]
+}

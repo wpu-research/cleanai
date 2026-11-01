@@ -1,0 +1,74 @@
+{
+  "id": "plan-a",
+  "name": "Plan A — Kare oda + koridor",
+  "units": "m",
+  "note": "Koordinat: x sağa, z aşağı. Ölçüler teknik çizim oranlarından türetildi, gerçek ölçü gelince burayı güncelle.",
+  "wallHeight": 2.7,
+  "wallThickness": 0.08,
+  "plenumHeight": 0.45,
+
+  "zones": [
+    {
+      "id": "Z1",
+      "name": "Temiz Oda",
+      "class": "ISO 7",
+      "pressurePa": 15,
+      "polygon": [[0, 0], [4.6, 0], [4.6, 7.0], [0, 7.0]]
+    },
+    {
+      "id": "Z2",
+      "name": "Koridor",
+      "class": "ISO 8",
+      "pressurePa": 8,
+      "polygon": [[4.6, 0], [7.0, 0], [7.0, 7.0], [4.6, 7.0]]
+    }
+  ],
+
+  "walls": [
+    { "a": [0, 0],   "b": [4.6, 0],  "zone": "Z1", "openings": [] },
+    { "a": [4.6, 0], "b": [4.6, 7.0],"zone": "Z1", "openings": [
+        { "id": "D1", "type": "door", "type_tr": "Temiz oda kapısı", "center": 1.85, "w": 0.9, "h": 2.1, "sill": 0.0, "vision": true }
+      ] },
+    { "a": [4.6, 7.0], "b": [0, 7.0], "zone": "Z1", "openings": [] },
+    { "a": [0, 7.0],   "b": [0, 0],   "zone": "Z1", "openings": [
+        { "id": "PB1", "type": "passbox", "type_tr": "Malzeme geçiş kutusu", "center": 4.6, "w": 0.9, "h": 0.7, "sill": 0.9 },
+        { "id": "PB2", "type": "passbox", "type_tr": "Malzeme geçiş kutusu", "center": 5.6, "w": 0.9, "h": 0.7, "sill": 0.9 }
+      ] },
+
+    { "a": [4.6, 0], "b": [7.0, 0],   "zone": "Z2", "openings": [] },
+    { "a": [7.0, 0], "b": [7.0, 7.0], "zone": "Z2", "openings": [
+        { "id": "D2", "type": "door", "type_tr": "Dış giriş kapısı", "center": 6.2, "w": 0.9, "h": 2.1, "sill": 0.0, "vision": true }
+      ] },
+    { "a": [7.0, 7.0], "b": [4.6, 7.0], "zone": "Z2", "openings": [] }
+  ],
+
+  "ceiling": {
+    "hepa": [
+      { "id": "HEPA-1", "x": 1.5, "z": 2.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-2", "x": 3.3, "z": 2.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-3", "x": 1.5, "z": 5.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-4", "x": 3.3, "z": 5.0, "w": 1.2, "l": 0.6 },
+      { "id": "HEPA-5", "x": 5.8, "z": 3.5, "w": 1.2, "l": 0.6 }
+    ],
+    "lights": [
+      { "id": "L1", "x": 2.3, "z": 1.0, "w": 1.2, "l": 0.3 },
+      { "id": "L2", "x": 2.3, "z": 3.5, "w": 1.2, "l": 0.3 },
+      { "id": "L3", "x": 2.3, "z": 6.0, "w": 1.2, "l": 0.3 },
+      { "id": "L4", "x": 5.8, "z": 1.5, "w": 1.2, "l": 0.3 },
+      { "id": "L5", "x": 5.8, "z": 5.5, "w": 1.2, "l": 0.3 }
+    ],
+    "returns": [
+      { "id": "RA-1", "x": 0.4, "z": 0.8, "w": 0.4, "l": 1.2 },
+      { "id": "RA-2", "x": 4.2, "z": 6.2, "w": 0.4, "l": 1.2 }
+    ]
+  },
+
+  "sensors": [
+    { "id": "DP-1", "type": "dp",   "label": "ΔP Oda/Koridor", "x": 4.5, "z": 4.5, "y": 1.5, "wall": "x+" },
+    { "id": "DP-2", "type": "dp",   "label": "ΔP Koridor/Dış", "x": 6.9, "z": 3.0, "y": 1.5, "wall": "x+" },
+    { "id": "TH-1", "type": "temp", "label": "Sıcaklık/Nem",   "x": 0.1, "z": 2.5, "y": 1.5, "wall": "x-" },
+    { "id": "PC-1", "type": "particle", "label": "Partikül Sayıcı", "x": 0.1, "z": 3.5, "y": 1.5, "wall": "x-" }
+  ],
+
+  "spawn": { "x": 5.8, "z": 5.5, "heading": 0 }
+}

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1312" height="1312" viewBox="-0.600 -0.600 8.200 8.200" data-plan="plan-a" data-px-per-m="160">
+  <title>Plan A — Kare oda + koridor — HMI katmanları</title>
+  <desc>Koordinat birimi: metre. viewBox plan koordinatlarıyla birebir aynıdır.</desc>
+  <style>
+    .zone{fill:none;stroke:#19c6e0;stroke-width:.04;opacity:.9}
+    .zone.alarm{stroke:#ff4d4f}
+    .door{fill:#2bd67b;stroke:#0b3b24;stroke-width:.02}
+    .door.closed{fill:#8795a1}
+    .door.alarm{fill:#ff4d4f}
+    .passbox{fill:#ffb020;stroke:#5a3c00;stroke-width:.02}
+    .hepa{fill:none;stroke:#7aa7ff;stroke-width:.04}
+    .light{fill:#fff3c4;stroke:#b79a3a;stroke-width:.02}
+    .light.off{fill:#5c6066}
+    .ra{fill:none;stroke:#9aa7b0;stroke-width:.04;stroke-dasharray:.12 .08}
+    .sensor{fill:#0b2630;stroke:#19c6e0;stroke-width:.03}
+    .label{font:.26px sans-serif;fill:#dff3f8;text-anchor:middle;dominant-baseline:middle}
+    .value{font:bold .3px sans-serif;fill:#19c6e0;text-anchor:middle;dominant-baseline:middle}
+  </style>
+  <g id="layer-zones" data-layer="zones">
+    <polygon id="zone-Z1" class="zone" points="0,0 4.6,0 4.6,7 0,7" data-name="Temiz Oda" data-class="ISO 7" data-pressure-sp="15" />
+    <polygon id="zone-Z2" class="zone" points="4.6,0 7,0 7,7 4.6,7" data-name="Koridor" data-class="ISO 8" data-pressure-sp="8" />
+  </g>
+  <g id="layer-doors" data-layer="doors">
+    <g id="door-D1" class="door closed" transform="translate(4.600 1.850) rotate(90.00)" data-kind="door" data-label="Temiz oda kapısı" data-zone="Z1"><rect x="-0.450" y="-0.080" width="0.900" height="0.160" /></g>
+    <g id="door-D2" class="door closed" transform="translate(7.000 6.200) rotate(90.00)" data-kind="door" data-label="Dış giriş kapısı" data-zone="Z2"><rect x="-0.450" y="-0.080" width="0.900" height="0.160" /></g>
+  </g>
+  <g id="layer-passboxes" data-layer="passboxes">
+    <g id="passbox-PB1" class="passbox" transform="translate(0.000 2.400) rotate(-90.00)" data-kind="passbox" data-label="Malzeme geçiş kutusu" data-zone="Z1"><rect x="-0.450" y="-0.080" width="0.900" height="0.160" /></g>
+    <g id="passbox-PB2" class="passbox" transform="translate(0.000 1.400) rotate(-90.00)" data-kind="passbox" data-label="Malzeme geçiş kutusu" data-zone="Z1"><rect x="-0.450" y="-0.080" width="0.900" height="0.160" /></g>
+  </g>
+  <g id="layer-hepa" data-layer="hepa">
+    <rect id="hepa-HEPA-1" class="hepa" x="0.900" y="1.700" width="1.2" height="0.6" data-kind="hepa" data-label="HEPA-1" />
+    <rect id="hepa-HEPA-2" class="hepa" x="2.700" y="1.700" width="1.2" height="0.6" data-kind="hepa" data-label="HEPA-2" />
+    <rect id="hepa-HEPA-3" class="hepa" x="0.900" y="4.700" width="1.2" height="0.6" data-kind="hepa" data-label="HEPA-3" />
+    <rect id="hepa-HEPA-4" class="hepa" x="2.700" y="4.700" width="1.2" height="0.6" data-kind="hepa" data-label="HEPA-4" />
+    <rect id="hepa-HEPA-5" class="hepa" x="5.200" y="3.200" width="1.2" height="0.6" data-kind="hepa" data-label="HEPA-5" />
+  </g>
+  <g id="layer-lights" data-layer="lights">
+    <rect id="light-L1" class="light" x="1.700" y="0.850" width="1.2" height="0.3" rx=".06" data-kind="light" data-label="L1" />
+    <rect id="light-L2" class="light" x="1.700" y="3.350" width="1.2" height="0.3" rx=".06" data-kind="light" data-label="L2" />
+    <rect id="light-L3" class="light" x="1.700" y="5.850" width="1.2" height="0.3" rx=".06" data-kind="light" data-label="L3" />
+    <rect id="light-L4" class="light" x="5.200" y="1.350" width="1.2" height="0.3" rx=".06" data-kind="light" data-label="L4" />
+    <rect id="light-L5" class="light" x="5.200" y="5.350" width="1.2" height="0.3" rx=".06" data-kind="light" data-label="L5" />
+  </g>
+  <g id="layer-return" data-layer="return">
+    <rect id="ra-RA-1" class="ra" x="0.200" y="0.200" width="0.4" height="1.2" data-kind="return" data-label="RA-1" />
+    <rect id="ra-RA-2" class="ra" x="4.000" y="5.600" width="0.4" height="1.2" data-kind="return" data-label="RA-2" />
+  </g>
+  <g id="layer-sensors" data-layer="sensors">
+    <g id="sensor-DP-1" data-kind="dp" data-label="ΔP Oda/Koridor">
+      <circle class="sensor" cx="4.5" cy="4.5" r=".22" />
+      <text id="value-DP-1" class="value" x="4.5" y="4.050">--</text>
+    </g>
+    <g id="sensor-DP-2" data-kind="dp" data-label="ΔP Koridor/Dış">
+      <circle class="sensor" cx="6.9" cy="3" r=".22" />
+      <text id="value-DP-2" class="value" x="6.9" y="2.550">--</text>
+    </g>
+    <g id="sensor-TH-1" data-kind="temp" data-label="Sıcaklık/Nem">
+      <circle class="sensor" cx="0.1" cy="2.5" r=".22" />
+      <text id="value-TH-1" class="value" x="0.1" y="2.050">--</text>
+    </g>
+    <g id="sensor-PC-1" data-kind="particle" data-label="Partikül Sayıcı">
+      <circle class="sensor" cx="0.1" cy="3.5" r=".22" />
+      <text id="value-PC-1" class="value" x="0.1" y="3.050">--</text>
+    </g>
+  </g>
+</svg>
