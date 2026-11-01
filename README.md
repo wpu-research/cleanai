@@ -3,25 +3,49 @@
 Teknik çizimden türetilmiş, içinde dolaşılabilen 3D temiz oda + PLC/HMI ekranı için
 arka plan görseli ve canlı veri bağlanacak SVG katmanları.
 
+**Canlı:** https://cleanai-production-a816.up.railway.app
+
 ## Çalıştırma
 
 ```bash
 npm install
 npm start          # http://localhost:5177
-npm test           # geometri + HMI katman doğrulaması
+npm test           # geometri, HMI katmanı ve API testleri
 ```
 
 ## Kullanım
 
 | Tuş / Düğme | İşlev |
 |---|---|
-| `1` / `2` | Plan A (kare + koridor) / Plan B (L + soyunma-airlock) |
+| Sağdaki liste | Proje seç / aç |
+| `Ctrl+S` | Kaydet |
 | `V` | Yürü ↔ Maket görünümü (maket modunda tavan kalkar) |
 | Tıkla | Fare kilidi (yürüyüş modu) |
 | `W A S D` | Yürü · `Shift` koş · `C` çömel |
 | `E` | En yakın kapıyı aç/kapat |
 | `R` | Kamerayı başa al |
-| `H` veya düğme | HMI arka planı + katmanları indir |
+| `H` veya **İndir** | HMI arka planı + katmanları indir |
+| **HMI yayınla** | Çıktıyı sunucuya yazıp PLC için sabit adres üret |
+
+## Projeler
+
+Projeler sunucuda tutulur; her kayıt sürüm numarasını artırır.
+
+| Uç nokta | İşlev |
+|---|---|
+| `GET /api/projects` | Proje listesi (ad, alan, sürüm, HMI durumu) |
+| `GET /api/projects/:id` | Tek proje + plan verisi |
+| `POST /api/projects` | Yeni proje (`{name, plan}`) — plan doğrulanmadan kaydedilmez |
+| `PUT /api/projects/:id` | Güncelle (sürüm artar) |
+| `DELETE /api/projects/:id` | Sil (HMI çıktıları da temizlenir) |
+| `POST /api/projects/:id/hmi` | HMI çıktısını yayınla |
+
+Arayüzdeki **Ölçüleri düzenle** panelinden plan JSON'u tarayıcıda değiştirilir;
+**Doğrula ve uygula** hatalı ölçüyü (duvar dışına taşan kapı, çakışan açıklık,
+tavanı aşan pencere) sahneye yansıtmadan reddeder. **Kaydet** / `Ctrl+S` sunucuya yazar.
+
+Depolama `DATA_DIR` altındadır (Railway'de `/data` kalıcı diski), yani yeniden
+dağıtımda projeler ve HMI çıktıları durur.
 
 ## Ölçü değiştirme
 
@@ -48,7 +72,17 @@ ve kapıdan geçilebildiğini doğrular.
 
 ## PLC / HMI çıktısı
 
-`H` ile üç dosya iner:
+**HMI yayınla** düğmesi çıktıyı sunucuya yazar ve PLC'nin doğrudan açabileceği
+sabit adresleri üretir — ekran yenilendiğinde son yayınlanan hâli gelir:
+
+```
+/hmi/<proje-id>/            katmanlar bindirilmiş hazır ekran
+/hmi/<proje-id>/bg.png      arka plan
+/hmi/<proje-id>/layers.svg  katmanlar
+/hmi/<proje-id>/tags.json   sinyal eşlemesi
+```
+
+`H` ile aynı çıktı yerel dosya olarak iner:
 
 - `<plan>-hmi-bg.png` — tepeden ortografik arka plan (tavan plakası gizli)
 - `<plan>-hmi-layers.svg` — PNG'nin üstüne **birebir oturan** katmanlar
@@ -83,7 +117,9 @@ document.getElementById('zone-Z1').classList.toggle('alarm', dp < 10);
 data/        plan tanımları (tek doğruluk kaynağı — ölçüler burada)
 src/build.js duvar/kapı/pass-box/tavan geometrisi + çarpışma
 src/hmi.js   HMI arka plan render'ı, SVG katmanları, etiket eşlemesi
-src/app.js   sahne, yürüyüş kontrolü, dışa aktarım
-test/        geometri ve katman doğrulaması
+src/validate.js plan doğrulama (tarayıcı + sunucu + test ortak)
+src/app.js   sahne, yürüyüş kontrolü, proje paneli, dışa aktarım
+server.js    proje kaydı, kalıcı depolama, HMI sabit adresleri
+test/        geometri, katman ve API uçtan uca testleri
 hmi/         üretilmiş SVG katmanları ve etiket eşlemeleri
 ```
