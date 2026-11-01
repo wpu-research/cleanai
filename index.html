@@ -2,7 +2,10 @@
 <html lang="tr">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#0e1418">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230e1418'/%3E%3Crect x='6' y='9' width='20' height='15' rx='2' fill='none' stroke='%2319c6e0' stroke-width='2'/%3E%3Crect x='11' y='5' width='10' height='4' rx='1' fill='%2319c6e0'/%3E%3C/svg%3E">
 <title>CleanAi — Temiz Oda 3D</title>
 <style>
   :root{
@@ -11,7 +14,8 @@
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;background:var(--bg);color:var(--fg);
     font:14px/1.45 system-ui,-apple-system,Segoe UI,sans-serif;overflow:hidden}
-  #view{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
+  #view{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:crosshair;
+    touch-action:none;-webkit-user-select:none;user-select:none}
   .panel{position:fixed;background:rgba(22,30,36,.92);border:1px solid var(--line);
     border-radius:10px;padding:10px 12px;backdrop-filter:blur(8px)}
   #top{top:12px;left:12px;display:flex;gap:16px;align-items:center;flex-wrap:wrap}
@@ -75,7 +79,76 @@
   .fld input[type=number],.fld input[type=text]{background:#1e2a32;color:var(--fg);border:1px solid var(--line);
     border-radius:7px;padding:5px 8px;font:inherit;font-size:12px;width:90px}
   .fld input[type=text]{width:180px}
-  @media (max-width:980px){#info,#projects,#editor{display:none}}
+  /* ---------- mobil ---------- */
+  #menuBtn,#mobilebar,#stick{display:none}
+
+  @media (max-width:900px), (pointer:coarse) and (max-width:1100px){
+    :root{--gut:10px}
+    button,select{font-size:14px;padding:9px 12px}          /* dokunma hedefi ≥ 40 px */
+    .fld input[type=number],.fld input[type=text]{font-size:16px;padding:8px 10px} /* iOS zoom'u engeller */
+
+    /* üst çubuk: ☰ ile açılan tam genişlik çekmece */
+    #menuBtn{display:flex;align-items:center;justify-content:center;position:fixed;z-index:30;
+      top:calc(env(safe-area-inset-top) + var(--gut));left:var(--gut);width:46px;height:46px;
+      font-size:20px;line-height:1;background:rgba(22,30,36,.95);border:1px solid var(--line);
+      border-radius:12px;backdrop-filter:blur(8px)}
+    #top{display:none;top:calc(env(safe-area-inset-top) + 64px);left:var(--gut);right:var(--gut);
+      flex-direction:column;align-items:stretch;gap:10px;max-height:62vh;overflow:auto;z-index:29}
+    #top.open{display:flex}
+    #top h1{font-size:15px;padding-bottom:8px;border-bottom:1px solid var(--line)}
+    .grp{flex-wrap:wrap}
+    .grp>label{width:100%;font-size:11px;text-transform:uppercase;letter-spacing:.5px}
+    .grp button,.grp select{flex:1 1 auto;min-width:86px}
+
+    /* paneller: alttan açılan sayfalar */
+    #projects,#editor,#importer{display:none;position:fixed;left:0;right:0;bottom:0;top:auto;
+      width:auto;max-width:none;transform:none;border-radius:16px 16px 0 0;z-index:28;
+      max-height:76vh;padding:12px 14px calc(env(safe-area-inset-bottom) + 72px);
+      border-left:0;border-right:0;border-bottom:0}
+    #projects.open,#editor.open,#importer.open{display:flex;flex-direction:column}
+    #projects{gap:10px}
+    #projList{max-height:38vh}
+    .proj{padding:10px}
+    .pactions button{min-height:42px}
+    #planJson{min-height:34vh;font-size:13px}
+    /* önizleme ekranın yarısını yemesin, "oluştur" her zaman parmağın altında kalsın */
+    #impCanvas{width:auto;height:auto;max-width:100%;max-height:32vh}
+    #impList{max-height:22vh;overflow:auto}
+    #importer .pactions:last-child{position:sticky;bottom:0;margin:0 -14px -4px;
+      padding:10px 14px 0;background:linear-gradient(transparent,rgba(22,30,36,.97) 30%)}
+    #impCreate{min-height:48px;font-size:14px}
+
+    /* bilgi şeridi ve ipucu */
+    #info{display:none;left:var(--gut);right:var(--gut);bottom:calc(env(safe-area-inset-bottom) + 76px);
+      max-width:none;font-size:12px;z-index:26}
+    #info.open{display:block}
+    #hint{display:none}
+    #crosshair{display:none !important}
+    #toast{bottom:calc(env(safe-area-inset-bottom) + 86px);left:var(--gut);right:var(--gut);
+      transform:none;text-align:center;font-size:13px}
+    #toast.show{transform:none}
+
+    /* alt eylem çubuğu */
+    #mobilebar{display:flex;gap:8px;position:fixed;z-index:31;left:0;right:0;
+      bottom:0;padding:8px var(--gut) calc(env(safe-area-inset-bottom) + 8px);
+      background:linear-gradient(transparent,rgba(14,20,24,.92) 28%)}
+    #mobilebar button{flex:1;min-height:46px;font-size:13px;
+      background:rgba(30,42,50,.95);backdrop-filter:blur(8px)}
+
+    /* sanal kumanda kolu */
+    #stick{display:none;position:fixed;z-index:25;width:132px;height:132px;border-radius:50%;
+      border:1.5px solid rgba(230,238,242,.35);background:rgba(14,20,24,.3);
+      pointer-events:none;transform:translate(-50%,-50%)}
+    #stick.on{display:block}
+    #stickKnob{position:absolute;left:50%;top:50%;width:54px;height:54px;margin:-27px 0 0 -27px;
+      border-radius:50%;background:rgba(25,198,224,.55);border:1.5px solid var(--acc)}
+  }
+
+  @media (max-width:900px) and (orientation:landscape){
+    #top{max-height:74vh}
+    #projects,#editor,#importer{max-height:88vh}
+    #stick{width:104px;height:104px}
+  }
 </style>
 <script type="importmap">
 { "imports": {
@@ -87,6 +160,8 @@
 <body>
 <canvas id="view"></canvas>
 <div id="crosshair"></div>
+<div id="stick"><div id="stickKnob"></div></div>
+<button id="menuBtn" aria-label="Menü">☰</button>
 
 <div id="top" class="panel">
   <h1>Clean<span>Ai</span> · Temiz Oda 3D</h1>
@@ -167,6 +242,13 @@
 
 <div id="hint" class="panel">—</div>
 <div id="toast"></div>
+
+<div id="mobilebar">
+  <button id="mModeBtn">Maket</button>
+  <button id="mProjBtn">Projeler</button>
+  <button id="mDoorBtn">Kapı</button>
+  <button id="mInfoBtn">Bilgi</button>
+</div>
 
 <script type="module" src="./src/app.js"></script>
 </body>

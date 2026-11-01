@@ -18,7 +18,9 @@ const app = {
 
 const canvas = document.getElementById('view');
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
-renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+// Mobilde piksel oranını kısıyoruz: retina telefonlarda 3x render GPU'yu boğuyor.
+const smallScreen = Math.min(innerWidth, innerHeight) < 820;
+renderer.setPixelRatio(Math.min(devicePixelRatio, smallScreen ? 1.6 : 2));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
 renderer.shadowMap.enabled = true;
@@ -33,7 +35,7 @@ scene.add(new THREE.HemisphereLight(0xffffff, 0xdfe6e9, 0.55));
 const sun = new THREE.DirectionalLight(0xffffff, 0.5);
 sun.position.set(6, 12, -4);
 sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(smallScreen ? 1024 : 2048, smallScreen ? 1024 : 2048);
 scene.add(sun, sun.target);
 
 const camera = new THREE.PerspectiveCamera(70, 1, 0.05, 200);
@@ -169,6 +171,8 @@ function setMode(m) {
   $('hint').textContent = m === 'walk'
     ? 'Tıkla → fare kilidi · WASD yürü · Shift koş · C çömel · E kapı aç/kapat · Esc çık'
     : 'Sol tuş döndür · sağ tuş kaydır · tekerlek yakınlaş';
+  if (m !== 'walk') { stickHide(); touch.moveId = touch.lookId = null; }
+  syncMobileBar();
   if (app.cfg) resetCamera();
 }
 
@@ -249,7 +253,8 @@ async function deleteProject() {
 /* ---------- ölçü düzenleyici ---------- */
 
 function toggleEditor(open) {
-  $('editor').classList.toggle('open', open ?? !$('editor').classList.contains('open'));
+  if (open === false) { $('editor').classList.remove('open'); return; }
+  openSheet('editor');
 }
 
 function applyEdits() {
@@ -281,7 +286,11 @@ function applyLook() {
   camera.quaternion.setFromEuler(new THREE.Euler(app.pitch, app.yaw, 0, 'YXZ'));
 }
 
+/** Dokunmatik cihaz mı? Fare kilidi yerine sanal kumanda kullanılır. */
+const isTouch = matchMedia('(pointer: coarse)').matches || 'ontouchstart' in window;
+
 canvas.addEventListener('click', () => {
+  if (isTouch) return;
   if (app.mode === 'walk' && !document.pointerLockElement) canvas.requestPointerLock();
 });
 document.addEventListener('pointerlockchange', () => {
@@ -294,6 +303,94 @@ document.addEventListener('mousemove', (e) => {
   app.pitch = Math.max(-1.35, Math.min(1.35, app.pitch - e.movementY * 0.0022));
   applyLook();
 });
+
+/* ---------- dokunmatik kontrol ----------
+   Ekranın solu: sanal kumanda kolu (hareket). Sağı: sürükleyerek bakış.
+   İki parmak aynı anda kullanılabilir; her parmak kendi işini sürdürür. */
+
+const touch = { moveId: null, lookId: null, origin: null, last: null };
+
+function stickShow(x, y) {
+  const s = $('stick');
+  s.style.left = `${x}px`;
+  s.style.top = `${y}px`;
+  s.classList.add('on');
+  $('stickKnob').style.transform = 'translate(0,0)';
+}
+function stickMove(dx, dy) {
+  const max = 46;
+  const d = Math.hypot(dx, dy);
+  const k = d > max ? max / d : 1;
+  $('stickKnob').style.transform = `translate(${dx * k}px, ${dy * k}px)`;
+  app.touchMove = { x: (dx * k) / max, z: (dy * k) / max };
+}
+function stickHide() {
+  $('stick').classList.remove('on');
+  app.touchMove = null;
+}
+
+canvas.addEventListener('pointerdown', (e) => {
+  if (e.pointerType !== 'touch' || app.mode !== 'walk') return;
+  // Safari bazı durumlarda yakalamayı reddediyor; kontrol bundan bağımsız çalışmalı
+  try { canvas.setPointerCapture(e.pointerId); } catch { /* yoksay */ }
+  if (e.clientX < innerWidth * 0.45 && touch.moveId === null) {
+    touch.moveId = e.pointerId;
+    touch.origin = { x: e.clientX, y: e.clientY };
+    stickShow(e.clientX, e.clientY);
+  } else if (touch.lookId === null) {
+    touch.lookId = e.pointerId;
+    touch.last = { x: e.clientX, y: e.clientY };
+  }
+});
+
+canvas.addEventListener('pointermove', (e) => {
+  if (e.pointerType !== 'touch') return;
+  if (e.pointerId === touch.moveId && touch.origin) {
+    stickMove(e.clientX - touch.origin.x, e.clientY - touch.origin.y);
+  } else if (e.pointerId === touch.lookId && touch.last) {
+    app.yaw -= (e.clientX - touch.last.x) * 0.005;
+    app.pitch = Math.max(-1.35, Math.min(1.35, app.pitch - (e.clientY - touch.last.y) * 0.005));
+    touch.last = { x: e.clientX, y: e.clientY };
+    applyLook();
+  }
+});
+
+const endTouch = (e) => {
+  if (e.pointerId === touch.moveId) { touch.moveId = null; touch.origin = null; stickHide(); }
+  if (e.pointerId === touch.lookId) { touch.lookId = null; touch.last = null; }
+};
+for (const ev of ['pointerup', 'pointercancel', 'pointerleave']) {
+  canvas.addEventListener(ev, endTouch);
+}
+
+/* ---------- mobil arayüz ---------- */
+
+/** Alttan açılan sayfalar aynı anda yalnız biri açık kalsın. */
+function openSheet(id) {
+  const sheets = ['projects', 'editor', 'importer', 'top'];
+  const el = $(id);
+  const wasOpen = el.classList.contains('open');
+  for (const s of sheets) if (s !== id) $(s).classList.remove('open');
+  el.classList.toggle('open', !wasOpen);
+}
+
+function initMobile() {
+  $('menuBtn').addEventListener('click', () => openSheet('top'));
+  $('mProjBtn').addEventListener('click', () => openSheet('projects'));
+  $('mInfoBtn').addEventListener('click', () => $('info').classList.toggle('open'));
+  $('mDoorBtn').addEventListener('click', toggleNearestDoor);
+  $('mModeBtn').addEventListener('click', () => setMode(app.mode === 'walk' ? 'orbit' : 'walk'));
+  // menüden bir şey seçilince çekmece kapansın
+  $('top').addEventListener('click', (e) => {
+    if (e.target.tagName === 'BUTTON') $('top').classList.remove('open');
+  });
+}
+
+/** Mobilde alt çubuğun durumunu sahneyle eşitler. */
+function syncMobileBar() {
+  $('mModeBtn').textContent = app.mode === 'walk' ? 'Maket' : 'Yürü';
+  $('mDoorBtn').style.display = app.mode === 'walk' ? '' : 'none';
+}
 
 const typing = () => ['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName);
 
@@ -414,7 +511,9 @@ function tick() {
     if (app.keys.has('KeyS')) fz += 1;
     if (app.keys.has('KeyA')) fx -= 1;
     if (app.keys.has('KeyD')) fx += 1;
-    const l = Math.hypot(fx, fz) || 1;
+    if (app.touchMove) { fx += app.touchMove.x; fz += app.touchMove.z; }
+    // kumanda kolu yarım itildiğinde yarım hız: uzunluğu 1'e kırpıyoruz, bölmüyoruz
+    const l = Math.max(1, Math.hypot(fx, fz));
     const sin = Math.sin(app.yaw), cos = Math.cos(app.yaw);
     // kamera yaw=0'da -Z'ye bakar; ileri = (-sin, -cos), sağ = (cos, -sin)
     const dx = ((fx / l) * cos + (fz / l) * sin) * sp * dt;
@@ -465,6 +564,12 @@ initImporter({
     } catch (e) { toast('Kaydedilemedi: ' + e.message); }
   },
 });
+
+initMobile();
+
+// adres çubuğu gizlenince/ekran döndürülünce tuvali yeniden boyutlandır
+addEventListener('orientationchange', () => setTimeout(resize, 250));
+visualViewport?.addEventListener('resize', resize);
 
 (async () => {
   try {

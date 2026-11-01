@@ -13,7 +13,11 @@ export function initImporter({ onPlan, toast }) {
   const cv = $('impCanvas');
   const ctx = cv.getContext('2d');
 
-  const open = () => { dlg.classList.add('open'); };
+  const open = () => {
+    // mobilde paneller alttan açılan sayfa olduğu için aynı anda yalnız biri açık kalmalı
+    for (const id of ['projects', 'editor']) document.getElementById(id)?.classList.remove('open');
+    dlg.classList.add('open');
+  };
   const close = () => { dlg.classList.remove('open'); };
 
   /* --- görüntü yükleme --- */

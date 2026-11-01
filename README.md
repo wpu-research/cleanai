@@ -28,6 +28,21 @@ npm test           # geometri, HMI katmanı ve API testleri
 | `H` veya **İndir** | HMI arka planı + katmanları indir |
 | **HMI yayınla** | Çıktıyı sunucuya yazıp PLC için sabit adres üret |
 
+## Mobil
+
+Telefon ve tablette dokunmatik kontrollerle açılır:
+
+- **Sol yarıya bas-tut** → sanal kumanda kolu belirir, sürükleyerek yürürsün
+  (yarım itersen yarım hız). **Sağ yarıda sürükle** → etrafa bakarsın.
+  İki parmak aynı anda kullanılabilir.
+- Alt çubuk: **Yürü/Maket**, **Projeler**, **Kapı**, **Bilgi**.
+- Sol üstteki **☰** tüm masaüstü denetimlerini (HMI, çizimden oda, ölçüler) açar.
+- Paneller alttan açılan sayfalara dönüşür; aynı anda yalnız biri açık kalır.
+- Maket modunda tek parmak döndürür, iki parmak kaydırır ve yakınlaştırır.
+
+Küçük ekranda piksel oranı 1.6'ya, gölge haritası 1024'e düşürülür.
+iPhone 13, Pixel 5 ve iPad üzerinde yatay taşma ve konsol hatası olmadan doğrulandı.
+
 ## Teknik çizimden oda üretme
 
 Üst çubuktaki **Çizimden oda oluştur** ile bir plan görüntüsü (PNG/JPG) yüklenir;
