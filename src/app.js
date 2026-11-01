@@ -4,6 +4,7 @@ import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 import { buildPlan, makeMaterials, blocked } from './build.js';
 import { renderHMIBackground, buildHMISVG, buildTagMap, planBounds } from './hmi.js';
 import { validatePlan } from './validate.js';
+import { initImporter } from './importui.js';
 
 const EYE = 1.65, RADIUS = 0.32, SPEED = 2.4, RUN = 4.2;
 
@@ -415,8 +416,9 @@ function tick() {
     if (app.keys.has('KeyD')) fx += 1;
     const l = Math.hypot(fx, fz) || 1;
     const sin = Math.sin(app.yaw), cos = Math.cos(app.yaw);
-    const dx = ((fx / l) * cos - (fz / l) * sin) * sp * dt;
-    const dz = ((fx / l) * sin + (fz / l) * cos) * sp * dt;
+    // kamera yaw=0'da -Z'ye bakar; ileri = (-sin, -cos), sağ = (cos, -sin)
+    const dx = ((fx / l) * cos + (fz / l) * sin) * sp * dt;
+    const dz = ((-fx / l) * sin + (fz / l) * cos) * sp * dt;
 
     const p = camera.position, reg = app.current.registry;
     if (!blocked(reg, p.x + dx, p.z, RADIUS)) p.x += dx;
@@ -441,8 +443,6 @@ addEventListener('resize', resize);
 
 /* ---------- bağlama ---------- */
 
-document.querySelectorAll('[data-mode]').forEach((el) =>
-  el.addEventListener('click', () => setMode(el.dataset.mode)));
 $('exportBtn').addEventListener('click', exportHMI);
 $('publishBtn').addEventListener('click', publishHMI);
 $('editBtn').addEventListener('click', () => toggleEditor());
@@ -452,6 +452,19 @@ $('revertBtn').addEventListener('click', revertEdits);
 $('saveBtn').addEventListener('click', saveProject);
 $('saveAsBtn').addEventListener('click', saveProjectAs);
 $('delBtn').addEventListener('click', deleteProject);
+
+initImporter({
+  toast,
+  onPlan: async (plan, name) => {
+    if (!app.online) return toast('Sunucu bağlantısı yok — proje kaydedilemez');
+    try {
+      const rec = await api.create({ name, plan });
+      await refreshProjects();
+      await openProject(rec.id);
+      toast(`Oda oluşturuldu ve kaydedildi — ${rec.name}`);
+    } catch (e) { toast('Kaydedilemedi: ' + e.message); }
+  },
+});
 
 (async () => {
   try {

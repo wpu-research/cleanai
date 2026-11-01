@@ -6,7 +6,7 @@
     "doc": "docs"
   },
   "scripts": {
-    "test": "node test/check.mjs && node test/api.mjs",
+    "test": "node test/check.mjs && node test/import.mjs && node test/api.mjs",
     "start": "node server.js",
     "dev": "node server.js"
   },

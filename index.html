@@ -61,6 +61,20 @@
   #planJson{flex:1;min-height:320px;background:#0c1317;color:#cfe3ea;border:1px solid var(--line);
     border-radius:7px;padding:8px;font:12px/1.45 ui-monospace,Menlo,Consolas,monospace;resize:vertical}
   .err{color:#ff8a8c;font-size:11px;white-space:pre-wrap;max-height:96px;overflow:auto}
+  #importer{display:none;left:50%;top:50%;transform:translate(-50%,-50%);width:min(620px,96vw);
+    max-height:92vh;overflow:auto;flex-direction:column;gap:10px;z-index:20}
+  #importer.open{display:flex}
+  #impDrop{border:1.5px dashed var(--line);border-radius:8px;padding:12px;display:flex;gap:10px;
+    align-items:center;flex-wrap:wrap}
+  #impDrop.over{border-color:var(--acc);background:#10252b}
+  #impCanvas{width:100%;max-width:560px;align-self:center;border-radius:6px;background:#0c1317}
+  .irow{display:flex;gap:8px;align-items:center;padding:3px 0;border-top:1px solid var(--line);font-size:12px}
+  .irow .n{width:18px;color:var(--acc);font-weight:600}
+  .dim{color:var(--dim)} .warn{color:#ffb020} .bad{color:#ff8a8c}
+  .fld{display:flex;gap:8px;align-items:center;font-size:12px;flex-wrap:wrap}
+  .fld input[type=number],.fld input[type=text]{background:#1e2a32;color:var(--fg);border:1px solid var(--line);
+    border-radius:7px;padding:5px 8px;font:inherit;font-size:12px;width:90px}
+  .fld input[type=text]{width:180px}
   @media (max-width:980px){#info,#projects,#editor{display:none}}
 </style>
 <script type="importmap">
@@ -92,6 +106,7 @@
     <button id="publishBtn">HMI yayınla</button>
   </div>
   <div class="grp">
+    <button id="importBtn" title="Teknik çizim görselinden oda üret ve proje olarak kaydet">Çizimden oda oluştur</button>
     <button id="editBtn">Ölçüleri düzenle</button>
   </div>
 </div>
@@ -122,6 +137,27 @@
     <button id="applyBtn">Doğrula ve uygula</button>
     <button id="revertBtn">Geri al</button>
   </div>
+</div>
+
+<div id="importer" class="panel">
+  <div class="phead"><b>Teknik çizimden oda oluştur</b><button id="impClose">Kapat</button></div>
+  <div id="impDrop">
+    <label>Çizimi buraya sürükle ya da</label>
+    <input id="impInput" type="file" accept="image/*">
+    <button id="impSample" type="button">Örnek çizim</button>
+    <span id="impFile" class="dim"></span>
+  </div>
+  <canvas id="impCanvas" width="560" height="10"></canvas>
+  <div id="impSummary" class="dim">Bir çizim yükle.</div>
+  <div id="impList"></div>
+  <div class="fld"><label>Eşik <span id="impThresholdVal"></span></label>
+    <input id="impThreshold" type="range" min="80" max="240" step="5">
+    <label>En kısa çizgi <span id="impMinLineVal"></span>‰</label>
+    <input id="impMinLine" type="range" min="15" max="120" step="1"></div>
+  <div class="fld"><label>Dış genişlik (m)</label><input id="impWidth" type="number" min="1" step="0.1" value="8">
+    <label>Tavan (m)</label><input id="impHeight" type="number" min="2" step="0.1" value="2.7">
+    <label>Proje adı</label><input id="impName" type="text" placeholder="Temiz oda"></div>
+  <div class="pactions"><button id="impCreate" class="on">Oda oluştur ve proje olarak kaydet</button></div>
 </div>
 
 <div id="info" class="panel">
