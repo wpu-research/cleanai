@@ -24,8 +24,41 @@ npm test           # geometri, HMI katmanı ve API testleri
 | `W A S D` | Yürü · `Shift` koş · `C` çömel |
 | `E` | En yakın kapıyı aç/kapat |
 | `R` | Kamerayı başa al |
+| **Çizimden oda oluştur** | Teknik çizim görüntüsünden odayı üret |
 | `H` veya **İndir** | HMI arka planı + katmanları indir |
 | **HMI yayınla** | Çıktıyı sunucuya yazıp PLC için sabit adres üret |
+
+## Teknik çizimden oda üretme
+
+Üst çubuktaki **Çizimden oda oluştur** ile bir plan görüntüsü (PNG/JPG) yüklenir;
+sistem çizimi okuyup odayı, duvarları, kapıları ve pass-box'ları çıkarır, 3D'yi kurar
+ve projeyi kaydeder. `samples/` altında iki örnek çizim var (**Örnek çizim** düğmesi
+bunlardan birini yükler).
+
+Nasıl çalışıyor (`src/import.js`):
+
+1. **Eşikleme** — koyu pikseller mürekkep sayılır (eşik ayarlanabilir).
+2. **Çizgi çıkarma** — eksen hizalı uzun piksel dizileri bulunur.
+3. **Çift çizgi birleştirme** — duvarı çizen iki paralel çizgi tek eksene indirgenir,
+   aradaki mesafe duvar kalınlığı olur.
+4. **Oda bulma** — duvar koordinatlarından ızgara kurulur, duvarla kapatılmamış
+   komşu hücreler birleştirilir; her bölge L biçimli olabilen bir poligona çevrilir.
+   Bina dışı bölgeler ve duvar araları elenir.
+5. **Simge sınıflandırma** — duvar pikselleri silinir, kalan mürekkep kümelenir.
+   Bir köşeden eşit uzaklıktaki pikseller **yay = kapı**, diğerleri **pass-box** sayılır.
+   Aynı duvarda örtüşen parçalar tek simgede birleşir.
+6. **Ölçek** — verdiğin **dış genişlik** (duvarların dış yüzleri arası) ile piksel
+   metreye çevrilir; diğer tüm ölçüler buradan türer.
+
+Sonuç her zaman `validatePlan`'dan geçer: duvara sığmayan açıklık daraltılıp içeri
+alınır, çakışan açıklık düşürülür.
+
+**Tarama kusursuz değildir.** İnce çizgili CAD çıktılarında isabet yüksek
+(`samples/cizim-plan-a.png`: 2 oda, 5 duvar, 2 kapı, 2 pass-box — çizimle birebir),
+kalın dolu duvarlı çizimlerde simge yakalama düşer. Bu yüzden iletişim kutusu
+bulduğu her açıklığı **güven değeriyle** listeler; türünü değiştirebilir ya da
+yok sayabilirsin. Sonuç tutmazsa **eşik** ve **en kısa çizgi** kaydırıcılarını oynat,
+tarama anında yenilenir.
 
 ## Projeler
 
@@ -117,9 +150,12 @@ document.getElementById('zone-Z1').classList.toggle('alarm', dp < 10);
 data/        plan tanımları (tek doğruluk kaynağı — ölçüler burada)
 src/build.js duvar/kapı/pass-box/tavan geometrisi + çarpışma
 src/hmi.js   HMI arka plan render'ı, SVG katmanları, etiket eşlemesi
+src/import.js   teknik çizim okuma: duvar/oda/simge çıkarımı → plan JSON
+src/importui.js içe aktarma iletişim kutusu (önizleme, düzeltme, üretim)
 src/validate.js plan doğrulama (tarayıcı + sunucu + test ortak)
 src/app.js   sahne, yürüyüş kontrolü, proje paneli, dışa aktarım
 server.js    proje kaydı, kalıcı depolama, HMI sabit adresleri
-test/        geometri, katman ve API uçtan uca testleri
+samples/     örnek teknik çizimler
+test/        geometri, katman, içe aktarma ve API uçtan uca testleri
 hmi/         üretilmiş SVG katmanları ve etiket eşlemeleri
 ```
